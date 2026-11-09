@@ -11,7 +11,7 @@ uvicorn[standard]>=0.53.0
 # so this must be a hard dep, not a transitive accident)
 sqlalchemy[asyncio]>=2.0.54
 asyncpg>=0.29.0
-aiosqlite>=0.19.0
+aiosqlite>=0.22.1
 alembic>=1.20.0
 
 # Validation
