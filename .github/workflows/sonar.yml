@@ -35,7 +35,7 @@ jobs:
       # Coverage must be generated IN this job: coverage.xml is gitignored,
       # so the scanner would otherwise see 0% on every PR (new_coverage
       # gate can never pass). Mirrors codecov.yml so Sonar gets real numbers.
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         if: steps.gate.outputs.skip != 'true'
         with:
           python-version: "3.11"
