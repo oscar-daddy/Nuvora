@@ -1,5 +1,5 @@
 import { Files, Clock, PlayCircle, LogOut, HardDrive, X, Users, Zap, Shield, Search } from 'lucide-react';
-import logo from '../assets/logo.png';
+import logo from '../assets/nuvora-logo.svg';
 import { useAppStore } from '../lib/store';
 import { useStorageStats, formatFileSize, useLogoutAll, useCurrentUser } from '../lib/api';
 import { useFocusReturn } from '../lib/useFocusReturn';
@@ -88,12 +88,12 @@ function Sidebar({ isOpen, onClose }: SidebarProps) {
                         <div className="w-10 h-10 rounded-xl overflow-hidden bg-gradient-to-br from-primary-600/40 via-dark-900 to-dark-900 p-1 ring-1 ring-primary-500/40 shadow-lg shadow-primary-500/30 flex items-center justify-center shrink-0">
                             <img 
                                 src={logo} 
-                                alt="Aruvi" 
+                                alt="Nuvora"
                                 className="w-full h-full object-contain" 
                             />
                         </div>
                         <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-primary-200 to-primary-400">
-                            Aruvi
+                            Nuvora
                         </span>
                     </div>
                     {/* Close button for mobile */}
@@ -107,17 +107,17 @@ function Sidebar({ isOpen, onClose }: SidebarProps) {
 
                 {/* Navigation */}
                 <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-                    <NavItem section="files" icon={Files} label="My Files" active={activeSection === 'files'} onClick={handleNavClick} />
-                    <NavItem section="recent" icon={Clock} label="Recently Added" active={activeSection === 'recent'} onClick={handleNavClick} />
-<NavItem section="continue_watching" icon={PlayCircle} label="Continue Watching" active={activeSection === 'continue_watching'} onClick={handleNavClick} />
-<NavItem section="grab" icon={Search} label="Search Movies" active={activeSection === 'grab'} onClick={handleNavClick} />
+                    <NavItem section="files" icon={Files} label="我的文件" active={activeSection === 'files'} onClick={handleNavClick} />
+                    <NavItem section="recent" icon={Clock} label="最近添加" active={activeSection === 'recent'} onClick={handleNavClick} />
+<NavItem section="continue_watching" icon={PlayCircle} label="继续观看" active={activeSection === 'continue_watching'} onClick={handleNavClick} />
+<NavItem section="grab" icon={Search} label="搜索影片" active={activeSection === 'grab'} onClick={handleNavClick} />
                     {user?.is_admin && (
                         <button
                             onClick={() => { setShowAdminPanel(true); if (window.innerWidth < 768) onClose(); }}
                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-dark-400 hover:text-white hover:bg-white/[0.05] transition-colors"
                         >
                             <Shield className="w-5 h-5" />
-                            Admin Panel
+                            管理后台
                         </button>
                     )}
                 </nav>
@@ -126,7 +126,7 @@ function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <div className="p-4 m-3 rounded-xl bg-gradient-to-br from-primary-600/[0.12] via-dark-800/60 to-dark-800/40 border border-primary-500/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
                     <div className="flex items-center gap-2 mb-2 text-sm text-dark-300">
                         <HardDrive className="w-4 h-4" />
-                        <span>Storage</span>
+                        <span>存储空间</span>
                     </div>
                     {storage ? (
                         <>
@@ -134,7 +134,7 @@ function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 {formatFileSize(storage.total_size)}
                             </div>
                             <div className="text-xs text-primary-400">
-                                Unlimited Storage <Zap className="w-3 h-3 inline-block text-primary-400" />
+                                无限存储空间 <Zap className="w-3 h-3 inline-block text-primary-400" />
                             </div>
                         </>
                     ) : (
@@ -149,14 +149,14 @@ function Sidebar({ isOpen, onClose }: SidebarProps) {
                         className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-dark-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                     >
                         <LogOut className="w-5 h-5" />
-                        <span className="font-medium">Logout</span>
+                        <span className="font-medium">退出登录</span>
                     </button>
                     <button
                         onClick={() => setShowLogoutAllConfirm(true)}
                         className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-dark-400 hover:text-orange-400 hover:bg-orange-500/10 transition-colors mt-1"
                     >
                         <Users className="w-5 h-5" />
-                        <span className="font-medium">Logout All</span>
+                        <span className="font-medium">退出所有设备</span>
                     </button>
                 </div>
             </aside>
@@ -170,9 +170,9 @@ function Sidebar({ isOpen, onClose }: SidebarProps) {
                             <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <LogOut className="w-6 h-6 text-red-500" />
                             </div>
-                            <h3 className="text-xl font-semibold text-white mb-2">Confirm Logout</h3>
+                            <h3 className="text-xl font-semibold text-white mb-2">确认退出登录</h3>
                             <p className="text-dark-400 text-sm">
-                                Are you sure you want to end your session?
+                                确定要退出当前账号吗？
                             </p>
                         </div>
                         <div className="p-4 border-t border-white/5 flex gap-3 bg-dark-800/50">
@@ -180,13 +180,13 @@ function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 onClick={() => setShowLogoutConfirm(false)}
                                 className="flex-1 px-4 py-2 rounded-lg text-dark-300 hover:bg-white/5 transition-colors font-medium"
                             >
-                                Cancel
+                                取消
                             </button>
                             <button
                                 onClick={handleLogout}
                                 className="flex-1 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium transition-colors shadow-lg shadow-red-500/20"
                             >
-                                Logout
+                                退出登录
                             </button>
                         </div>
                     </div>
@@ -201,9 +201,9 @@ function Sidebar({ isOpen, onClose }: SidebarProps) {
                             <div className="w-12 h-12 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Users className="w-6 h-6 text-orange-500" />
                             </div>
-                            <h3 className="text-xl font-semibold text-white mb-2">Logout Everywhere</h3>
+                            <h3 className="text-xl font-semibold text-white mb-2">在所有设备上退出登录</h3>
                             <p className="text-dark-400 text-sm">
-                                This will end your session on <strong>all devices</strong>. Are you sure?
+                                这将结束你在 <strong>所有设备</strong>上的登录状态，确定继续吗？
                             </p>
                         </div>
                         <div className="p-4 border-t border-white/5 flex gap-3 bg-dark-800/50">
@@ -211,14 +211,14 @@ function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 onClick={() => setShowLogoutAllConfirm(false)}
                                 className="flex-1 px-4 py-2 rounded-lg text-dark-300 hover:bg-white/5 transition-colors font-medium"
                             >
-                                Cancel
+                                取消
                             </button>
                             <button
                                 onClick={handleLogoutAll}
                                 className="flex-1 px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-medium transition-colors shadow-lg shadow-orange-500/20"
                                 disabled={logoutAllMutation.isPending}
                             >
-                                {logoutAllMutation.isPending ? 'Logging out...' : 'Logout All'}
+                                {logoutAllMutation.isPending ? '正在退出...' : '退出所有设备'}
                             </button>
                         </div>
                     </div>

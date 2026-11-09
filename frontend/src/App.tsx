@@ -6,13 +6,13 @@ import FileBrowser from './components/FileBrowser';
 import GlobalContextMenu from './components/GlobalContextMenu';
 import MediaPlayer from './components/MediaPlayer';
 import { useAppStore } from './lib/store';
-import logo from './assets/logo.png';
+import logo from './assets/nuvora-logo.svg';
 
 function AuthCallback() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const token = searchParams.get('token');
-const [status, setStatus] = useState('Processing...');
+const [status, setStatus] = useState('正在处理登录信息...');
 const [saved, setSaved] = useState(false);
 
     useEffect(() => {
@@ -22,17 +22,17 @@ const [saved, setSaved] = useState(false);
                 const check = localStorage.getItem('access_token');
                 if (check === token) {
 setSaved(true);
-setStatus('Token saved! Redirecting...');
+setStatus('登录凭证保存成功，正在跳转...');
 // Actually redirect — without this the page sat on the spinner forever.
 navigate('/', { replace: true });
                 } else {
-                    setStatus('Failed to save token to localStorage');
+                    setStatus('无法保存登录凭证');
                 }
             } catch (e) {
                 setStatus(`Error: ${e}`);
             }
         } else {
-            setStatus('No token in URL');
+            setStatus('登录链接中没有登录凭证');
         }
     }, [token, navigate]);
 
@@ -44,13 +44,13 @@ navigate('/', { replace: true });
 
                 {token && !saved && (
                     <div className="mt-4 p-4 bg-dark-800 rounded-lg text-left">
-                        <p className="text-dark-400 text-sm mb-2">Token received (click to copy):</p>
+                        <p className="text-dark-400 text-sm mb-2">已收到登录凭证，点击下方内容即可复制：</p>
                         <button
                             onClick={() => {
                                 navigator.clipboard.writeText(token).then(() => {
-                                    setStatus('Token copied! Open browser DevTools console and run:\nlocalStorage.setItem("access_token", "paste-token-here")');
+                                    setStatus('登录凭证已复制。如果自动登录失败，请在浏览器开发者工具的控制台中执行：\nlocalStorage.setItem("access_token", "在这里粘贴登录凭证")');
                                 }).catch(() => {
-                                    setStatus('Copy failed (browser blocked clipboard). Long-press / Ctrl+C the token above.');
+                                    setStatus('复制失败，请长按上方登录凭证，或使用 Ctrl+C 手动复制。');
                                 });
                             }}
                             className="text-xs text-primary-400 break-all text-left hover:text-primary-300"
@@ -63,7 +63,7 @@ navigate('/', { replace: true });
                                 className="inline-block px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded text-white text-sm"
                                 onClick={() => localStorage.setItem('access_token', token)}
                             >
-                                Try Manual Login →
+                                尝试手动登录 →
                             </a>
                         </div>
                     </div>
@@ -101,7 +101,7 @@ function LoginPage() {
     // Restore saved code (survives reload) or generate exactly once per page load
     const requestNewCode = useCallback(() => {
         if (resendNoticeRef.current) {
-            setNotice('New code generated — tap Open Telegram Bot again and send the new code.');
+            setNotice('新的登录码已生成，请重新打开 Telegram 机器人并发送新登录码。');
         }
         resendNoticeRef.current = false;
         setCodeExpired(false);
@@ -116,7 +116,7 @@ function LoginPage() {
                 setIsPolling(true);
             },
             onError: (err: any) => {
-                setError(err.response?.data?.detail || "Failed to generate code");
+                setError(err.response?.data?.detail || "生成登录码失败");
             }
         });
     }, [generateCode]);
@@ -172,7 +172,7 @@ function LoginPage() {
                         // instead of spinning silently forever.
                         const status = err?.response?.status;
                         if (status === 410 || status === 404) {
-                            setError(err.response?.data?.detail || 'This code is no longer valid — generate a new one.');
+                            setError(err.response?.data?.detail || '此登录码已失效，请重新获取。');
                             setIsPolling(false);
                             clearStoredLoginCode();
                             return;
@@ -198,8 +198,8 @@ function LoginPage() {
             onSuccess: (data) => {
 if (!('access_token' in data)) {
                     setError(data.status === 'pending'
-                        ? 'Code not confirmed yet — send /login <code> to the bot first.'
-                        : 'Invalid response from server');
+                        ? '登录码尚未确认，请先向 Telegram 机器人发送 /login <code>。'
+                        : '服务器返回了无效响应');
                     return;
                 }
                 localStorage.setItem('access_token', data.access_token);
@@ -208,7 +208,7 @@ if (!('access_token' in data)) {
                 window.location.href = '/home';
             },
             onError: (err: any) => {
-                setError(err.response?.data?.detail || "Invalid code");
+                setError(err.response?.data?.detail || "登录码无效，请检查后重试");
             }
         });
     };
@@ -225,14 +225,14 @@ if (!('access_token' in data)) {
             <div className="glass-panel p-8 max-w-md w-full text-center animate-scale-in relative z-10">
                 {/* Logo */}
                 <div className="w-28 h-28 mx-auto mb-6 rounded-3xl overflow-hidden bg-gradient-to-br from-primary-600/40 via-dark-900 to-dark-900 p-2 ring-1 ring-primary-500/40 shadow-glow-lg flex items-center justify-center">
-                    <img src={logo} alt="Aruvi" className="w-full h-full object-contain" />
+                    <img src={logo} alt="Nuvora" className="w-full h-full object-contain" />
                 </div>
 
                 <h1 className="text-3xl font-bold mb-2 text-gradient">
-                    Aruvi
+                    Nuvora
                 </h1>
                 <p className="text-dark-400 mb-8">
-                    Stream your media anywhere
+                    随时随地访问你的媒体
                 </p>
 
                 <div className="space-y-6">
@@ -242,13 +242,13 @@ if (!('access_token' in data)) {
                             <svg className="w-5 h-5 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                             </svg>
-                            Login with Code
+                            验证码登录
                         </h3>
                         <form onSubmit={handleManualLogin} className="flex flex-col gap-3">
                             <div className="relative">
                                 <input
                                     type="text"
-                                    placeholder="ENTER 6-DIGIT CODE"
+                                    placeholder="请输入 6 位登录码"
                                     value={code}
                                     onChange={(e) => setCode(e.target.value.toUpperCase())}
                                     maxLength={6}
@@ -268,9 +268,9 @@ if (!('access_token' in data)) {
                                 {isVerifying ? (
                                     <span className="flex items-center justify-center gap-2">
                                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                        Verifying...
+                                        正在验证...
                                     </span>
-                                ) : 'Login'}
+                                ) : '登录'}
                             </button>
                             {error && (
                                 <p className="text-red-400 text-sm mt-1">
@@ -288,19 +288,19 @@ if (!('access_token' in data)) {
                             disabled={isGenerating}
                             className="mt-3 w-full py-2 text-sm text-primary-400 hover:text-primary-300 transition-colors disabled:opacity-50"
                         >
-                            {isGenerating ? 'Generating...' : code ? 'Resend Code' : 'Generate Code'}
+                            {isGenerating ? '正在生成...' : code ? '重新获取登录码' : '获取登录码'}
                         </button>
 
                         {codeExpired && (
                             <p className="text-red-400 text-sm mt-4">
-                                Code expired — tap Resend Code for a new one, then send it to the bot.
+                                登录码已过期，请重新获取，然后发送给 Telegram 机器人。
                             </p>
                         )}
 
                         {isPolling && (
                             <div className="flex items-center justify-center gap-2 mt-4 text-xs text-dark-400">
                                 <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse"></div>
-                                Waiting for confirmation...
+                                等待机器人确认登录...
                             </div>
                         )}
 
@@ -318,7 +318,7 @@ if (!('access_token' in data)) {
                             <div className="w-full border-t border-white/[0.06]"></div>
                         </div>
                         <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-dark-900/80 px-3 text-dark-500">Or open bot directly</span>
+                            <span className="bg-dark-900/80 px-3 text-dark-500">或者直接打开 Telegram 机器人</span>
                         </div>
                     </div>
 
@@ -355,7 +355,7 @@ function BotLink({ code }: { code?: string }) {
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.226-.461-1.901-.903-1.056-.692-1.653-1.123-2.678-1.799-1.185-.781-.417-1.21.258-1.911.177-.184 3.247-2.977 3.307-3.23.007-.032.015-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.139-5.062 3.345-.479.329-.913.489-1.302.481-.428-.009-1.252-.242-1.865-.442-.751-.244-1.349-.374-1.297-.789.027-.216.324-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.015 3.333-1.386 4.025-1.627 4.477-1.635.099-.002.321.023.465.141.121.099.155.232.17.325.015.094.034.31.019.478z" />
             </svg>
-            Open Telegram Bot
+            打开 Telegram 机器人
         </a>
     );
 }
@@ -376,7 +376,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
             <div className="min-h-screen flex items-center justify-center bg-dark-950">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-                    <p className="text-dark-400">Checking authentication...</p>
+                    <p className="text-dark-400">正在验证登录状态...</p>
                 </div>
             </div>
         );
@@ -387,16 +387,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-dark-950 p-4">
                 <div className="text-center max-w-md">
-                    <p className="text-red-400 text-lg mb-4">Authentication Error</p>
+                    <p className="text-red-400 text-lg mb-4">登录验证失败</p>
                     <p className="text-dark-400 text-sm mb-4">
-                        {error instanceof Error ? error.message : 'Failed to verify token'}
+                        {error instanceof Error ? error.message : '无法验证登录凭证'}
                     </p>
                     <div className="flex gap-3 justify-center">
                         <button
                             onClick={() => refetch()}
                             className="px-4 py-2 bg-dark-700 hover:bg-dark-600 rounded text-white transition-colors"
                         >
-                            Retry
+                            重试
                         </button>
                         <button
                             onClick={() => {
@@ -406,7 +406,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
                             }}
                             className="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded text-white transition-colors"
                         >
-                            Go to Login
+                            返回登录页面
                         </button>
                     </div>
                 </div>

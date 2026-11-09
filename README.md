@@ -1,8 +1,8 @@
-# Aruvi
+# Nuvora
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/tirforge/Aruvi?include_prereleases)](https://github.com/tirforge/Aruvi/releases)
-[![Stars](https://img.shields.io/github/stars/tirforge/Aruvi?style=social)](https://github.com/tirforge/Aruvi/stargazers)
+[![Release](https://img.shields.io/github/v/release/oscar-daddy/Nuvora?include_prereleases)](https://github.com/oscar-daddy/Nuvora/releases)
+[![Stars](https://img.shields.io/github/stars/oscar-daddy/Nuvora?style=social)](https://github.com/oscar-daddy/Nuvora/stargazers)
 ![Platforms](https://img.shields.io/badge/platform-Web%20%7C%20Android%20%7C%20TV%20%7C%20Win%20%7C%20Linux-blue)
 
 Self-hosted media platform that streams your own files from a private Telegram channel
@@ -21,7 +21,7 @@ streaming with a two-tier (RAM + disk) cache.
 </table>
 
 ```
-aruvi/
+nuvora/
 ├── backend/      # FastAPI backend (streaming engine, Telegram bot, API, subtitles)
 ├── frontend/     # React SPA (web player + file manager)
 ├── android/      # Native Android / Android-TV app (Kotlin + Jetpack Compose)
@@ -38,7 +38,7 @@ aruvi/
 
 ## How It Works — You Bring Your Own Storage
 
-Aruvi ships **no content**. Each deployment is fully self-hosted against *your own*
+Nuvora ships **no content**. Each deployment is fully self-hosted against *your own*
 private Telegram channel:
 
 1. **Create your storage** — make a private Telegram channel, set its ID in `.env`
@@ -82,7 +82,7 @@ Then point the Android app at that public URL:
 
 - **Android:** Settings → Server URL → `https://movie.your-domain.tunnel.example.com`
 
-> The signed `Aruvi` APKs ship with `https://movie.aaruvi.space` as the default
+> The signed APKs provided by the upstream Aruvi project ship with `https://movie.aaruvi.space` as the default
 > server, which is already publicly reachable — casting works out of the box there.
 
 ### Permissions
@@ -121,8 +121,8 @@ Web UI served from `backend/app/static` (prebuilt SPA bundle included).
 
 Copy `.env.example` → `.env` and fill in. Every cache/prefetch/concurrency knob is tunable — defaults match the live instance.
 
-> **Newcomer? Get all IDs + session strings in one click:** [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/tirforge/Aruvi) — click it → wait 30s → run `python scripts/setup_helper.py` → follow prompts (phone → code). It prints your `TELEGRAM_STORAGE_CHANNEL_ID` and `GRAB_GROUP_USERNAMES` + session strings. No local install needed.
-> Or use the **web helper with input boxes:** https://aaruvi.space/setup.html — fill API_ID/HASH + channel IDs → generate `.env` snippet instantly (session strings still via Codespaces).
+> **Upstream setup helper:** Get all IDs + session strings in one click: [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/tirforge/Aruvi) — click it → wait 30s → run `python scripts/setup_helper.py` → follow prompts (phone → code). It prints your `TELEGRAM_STORAGE_CHANNEL_ID` and `GRAB_GROUP_USERNAMES` + session strings. No local install needed.
+> Or use the **upstream Aruvi web helper with input boxes:** https://aaruvi.space/setup.html — fill API_ID/HASH + channel IDs → generate `.env` snippet instantly (session strings still via Codespaces).
 
 <details>
 <summary>Easiest copy-paste (Codespaces or local)</summary>
@@ -141,9 +141,9 @@ Full step-by-step: [docs/grabber.md:2.1](docs/grabber.md).
 
 #### Add your storage channel (required for local hosting)
 
-This is the Telegram channel where **your own files** live. Aruvi only streams what you put there.
+This is the Telegram channel where **your own files** live. Nuvora only streams what you put there.
 
-1. In Telegram, create a **new channel** (private recommended, e.g. `My Aruvi Storage`).
+1. In Telegram, create a **new channel** (private recommended, e.g. `My Nuvora Storage`).
 2. Add your bot (`@YourBot` from BotFather) as **admin** — give it `Post messages` permission.
 3. Send any message to the channel, then forward it to [`@userinfobot`](https://t.me/userinfobot) — it replies with `ID: -100...`. Use that full `-100...` value.
    - Alt: forward to `@JsonDumpBot` or call `https://api.telegram.org/bot<token>/getUpdates` and read `chat.id`.
@@ -176,7 +176,7 @@ cp local.properties.example local.properties
 
 ```
 ┌──────────────┐     ┌──────────────┐     ┌────────────────────┐
-│   Your TV    │────▶│  Aruvi API   │────▶│  Telegram Channel  │
+│   Your TV    │────▶│  Nuvora API   │────▶│  Telegram Channel  │
 │  / Browser   │◀───│  (Port 7680) │◀───│  (Your Storage)    │
 └──────────────┘     └──────────────┘     └────────────────────┘
                             │
@@ -206,7 +206,7 @@ See [docs/architecture.md](docs/architecture.md) for the full simple explanation
 | Auth & tokens | [docs/auth.md](docs/auth.md) |
 | Database schema | [docs/data-model.md](docs/data-model.md) |
 | Grabber (add groups) | [docs/grabber.md](docs/grabber.md) |
-| Self-Hosting (Docker) | [Self-Host Guide](https://aaruvi.space/selfhost.html) / [docs/deployment.md](docs/deployment.md) |
+| Self-Hosting (Docker) | [Upstream Aruvi Self-Host Guide](https://aaruvi.space/selfhost.html) / [docs/deployment.md](docs/deployment.md) |
 | Testing | [docs/testing.md](docs/testing.md) |
 | Deploy & runbook | [docs/deployment.md](docs/deployment.md) |
 | Agent cheat sheet | [AGENTS.md](AGENTS.md) |
@@ -245,7 +245,7 @@ Full list in `.env.example`.
 
 ## Credits
 
-Built on the shoulders of [TelePlay](https://github.com/subinps/TelePlay) and [MoviPlayer](https://github.com/mrujjwalg/movi-player). Aruvi started as a fork and grew into its own thing with a rewritten backend, multi-user auth, desktop apps, and heavy reliability work. Huge thanks to those maintainers.
+Nuvora is a community-developed fork of [Aruvi](https://github.com/tirforge/Aruvi), with additional development, localization, mobile usability improvements, and reliability fixes. It retains upstream components and their original license and copyright notices. Nuvora also builds on work from [TelePlay](https://github.com/subinps/TelePlay) and [MoviPlayer](https://github.com/mrujjwalg/movi-player). Many thanks to all the original maintainers.
 
 ---
 

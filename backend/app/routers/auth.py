@@ -165,6 +165,7 @@ async def get_current_user_info(
         last_name=current_user.last_name,
         created_at=current_user.created_at,
         last_active=current_user.last_active,
+        is_admin=current_user.is_admin,
     )
 
 

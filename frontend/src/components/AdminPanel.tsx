@@ -9,7 +9,7 @@ function formatDate(iso: string) {
     const normalized = /(Z|[+-]\d{2}:\d{2})$/i.test(iso) ? iso : iso + 'Z';
     const d = new Date(normalized);
     if (Number.isNaN(d.getTime())) return iso;
-    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleDateString('zh-CN') + ' ' + d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
 }
 
 function errorMessage(err: any, fallback: string) {
@@ -89,7 +89,7 @@ function UserRow({ user, onToggleAdmin, onDelete, togglePending, deletePending }
                             ? 'text-orange-400 hover:bg-orange-500/10'
                             : 'text-dark-400 hover:text-primary-400 hover:bg-primary-500/10'
                     }`}
-                    title={user.is_admin ? 'Revoke admin' : 'Make admin'}
+                    title={user.is_admin ? '撤销管理员权限' : '设为管理员'}
                 >
                     {user.is_admin ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                 </button>
@@ -100,14 +100,14 @@ function UserRow({ user, onToggleAdmin, onDelete, togglePending, deletePending }
                             disabled={togglePending || deletePending}
                             className="px-3 py-1.5 text-xs rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {deletePending ? 'Deleting...' : 'Confirm'}
+                            {deletePending ? '正在删除...' : '确认'}
                         </button>
                         <button
                             onClick={() => setConfirmDelete(false)}
                             disabled={togglePending || deletePending}
                             className="px-3 py-1.5 text-xs rounded-lg bg-dark-700 text-dark-300 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Cancel
+                            取消
                         </button>
                     </div>
                 ) : (
@@ -115,7 +115,7 @@ function UserRow({ user, onToggleAdmin, onDelete, togglePending, deletePending }
                         onClick={() => setConfirmDelete(true)}
                         disabled={togglePending || deletePending}
                         className="p-2 rounded-lg text-dark-400 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Delete user"
+                        title="删除用户"
                     >
                         <Trash2 className="w-4 h-4" />
                     </button>
@@ -136,7 +136,7 @@ export default function AdminPanel({ onBack }: { onBack: () => void }) {
         try {
             await toggleAdmin.mutateAsync(user.id);
         } catch (error) {
-            addToast(errorMessage(error, 'Failed to update admin status'), 'error');
+            addToast(errorMessage(error, '更新管理员权限失败'), 'error');
         }
     };
 
@@ -144,7 +144,7 @@ export default function AdminPanel({ onBack }: { onBack: () => void }) {
         try {
             await deleteUser.mutateAsync(user.id);
         } catch (error) {
-            addToast(errorMessage(error, 'Failed to delete user'), 'error');
+            addToast(errorMessage(error, '删除用户失败'), 'error');
         }
     };
 
@@ -162,9 +162,9 @@ export default function AdminPanel({ onBack }: { onBack: () => void }) {
                     <div>
                         <h1 className="text-2xl font-bold text-white flex items-center gap-3">
                             <Shield className="w-6 h-6 text-primary-400" />
-                            Admin Panel
+                            管理后台
                         </h1>
-                        <p className="text-dark-400 text-sm">Manage users and system settings</p>
+                        <p className="text-dark-400 text-sm">管理用户和系统设置</p>
                     </div>
                 </div>
 
@@ -177,10 +177,10 @@ export default function AdminPanel({ onBack }: { onBack: () => void }) {
                     </div>
                 ) : stats ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                        <StatCard icon={Users} label="Total Users" value={String(stats.total_users)} />
-                        <StatCard icon={FileText} label="Total Files" value={String(stats.total_files)} />
-                        <StatCard icon={HardDrive} label="Storage Used" value={formatFileSize(stats.total_storage_bytes)} />
-                        <StatCard icon={Activity} label="Active Today" value={String(stats.active_today)} sub="Last 24 hours" />
+                        <StatCard icon={Users} label="用户总数" value={String(stats.total_users)} />
+                        <StatCard icon={FileText} label="文件总数" value={String(stats.total_files)} />
+                        <StatCard icon={HardDrive} label="已用存储空间" value={formatFileSize(stats.total_storage_bytes)} />
+                        <StatCard icon={Activity} label="今日活跃用户" value={String(stats.active_today)} sub="最近 24 小时" />
                     </div>
                 ) : null}
 
@@ -188,7 +188,7 @@ export default function AdminPanel({ onBack }: { onBack: () => void }) {
                 <div className="glass-panel p-6">
                     <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                         <Users className="w-5 h-5 text-primary-400" />
-                        All Users
+                        全部用户
                     </h2>
                     {usersLoading ? (
                         <div className="space-y-3">
@@ -213,7 +213,7 @@ export default function AdminPanel({ onBack }: { onBack: () => void }) {
                             ))}
                         </div>
                     ) : (
-                        <p className="text-dark-400 text-center py-8">No users found</p>
+                        <p className="text-dark-400 text-center py-8">没有找到用户</p>
                     )}
                 </div>
 
@@ -221,9 +221,9 @@ export default function AdminPanel({ onBack }: { onBack: () => void }) {
                 <div className="mt-6 glass-card p-4 flex items-start gap-3">
                     <Database className="w-5 h-5 text-dark-500 shrink-0 mt-0.5" />
                     <p className="text-xs text-dark-500">
-                        AUTH_USERS in env vars auto-grants admin on registration.
-                        The first user to ever use the bot also becomes admin automatically.
-                        Admins can promote/demote others here.
+                        在环境变量中配置 AUTH_USERS，可在用户注册时自动授予管理员权限。
+                        首位使用机器人的用户也会自动成为管理员。
+                        管理员可以在此为其他用户授予或撤销管理员权限。
                     </p>
                 </div>
             </div>

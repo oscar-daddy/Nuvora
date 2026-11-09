@@ -69,7 +69,7 @@ const clearSelection = useAppStore((s) => s.clearSelection);
                 };
                 findMoved(folderTree);
                 if (selectedId != null && (folderIds.has(selectedId) || descendants.has(selectedId))) {
-                    addToast('Cannot move a folder into itself or its subfolder', 'error');
+                    addToast('无法将文件夹移动到自身或其子文件夹中', 'error');
                     return;
                 }
             }
@@ -83,11 +83,11 @@ const clearSelection = useAppStore((s) => s.clearSelection);
             }
 
             await Promise.all(promises);
-            addToast(`Moved ${totalItems} item(s) successfully`);
+            addToast(`已成功移动 ${totalItems} 个项目`);
             clearSelection();
             onClose();
         } catch (error) {
-            addToast('Failed to move items', 'error');
+            addToast('移动项目失败', 'error');
         }
     };
 
@@ -99,14 +99,14 @@ const clearSelection = useAppStore((s) => s.clearSelection);
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
             <div className="glass-card w-full max-w-md p-6 animate-scale-in">
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold">Move {totalItems} Item{totalItems !== 1 ? 's' : ''}</h2>
+                    <h2 className="text-lg font-semibold">移动 {totalItems} 个项目</h2>
                     <button onClick={safeClose} className="p-1 hover:bg-dark-700 rounded">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 <p className="text-sm text-dark-400 mb-4 truncate">
-                    Select destination folder
+                    请选择目标文件夹
                 </p>
 
                 <div className="bg-dark-800 rounded-lg max-h-64 overflow-y-auto mb-4">
@@ -117,11 +117,11 @@ const clearSelection = useAppStore((s) => s.clearSelection);
                             }`}
                     >
                         <Home className="w-4 h-4" />
-                        <span>Root (No folder)</span>
+                        <span>根目录（不属于任何文件夹）</span>
                     </button>
 
                     {isLoading ? (
-                        <div className="p-4 text-center text-dark-400">Loading...</div>
+                        <div className="p-4 text-center text-dark-400">正在加载...</div>
                     ) : (
                         folderTree?.map((folder) => (
                             <FolderTreeItem
@@ -140,7 +140,7 @@ const clearSelection = useAppStore((s) => s.clearSelection);
                         onClick={safeClose}
                         className="px-4 py-2 text-dark-400 hover:text-white transition-colors"
                     >
-                        Cancel
+                        取消
                     </button>
                     <button
                         onClick={handleMove}
@@ -150,10 +150,10 @@ const clearSelection = useAppStore((s) => s.clearSelection);
                         {isPending ? (
                             <>
                                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                Moving...
+                                正在移动...
                             </>
                         ) : (
-                            'Move Here'
+                            '移动到此处'
                         )}
                     </button>
                 </div>
@@ -186,7 +186,7 @@ function FolderTreeItem({ folder, selectedId, onSelect, depth }: {
                         type="button"
                         onClick={() => setExpanded(!expanded)}
                         aria-expanded={expanded}
-                        aria-label={expanded ? `Collapse ${folder.name}` : `Expand ${folder.name}`}
+                        aria-label={expanded ? `收起文件夹 ${folder.name}` : `展开文件夹 ${folder.name}`}
                         className="p-0.5 rounded hover:bg-white/10 transition-colors shrink-0"
                     >
                         <ChevronRight className={`w-3 h-3 transition-transform ${expanded ? 'rotate-90' : ''}`} />
@@ -198,7 +198,7 @@ function FolderTreeItem({ folder, selectedId, onSelect, depth }: {
                     type="button"
                     onClick={() => onSelect(folder.id)}
                     aria-pressed={selectedId === folder.id}
-                    aria-label={`Select ${folder.name}`}
+                    aria-label={`选择文件夹 ${folder.name}`}
                     className="flex items-center gap-2 flex-1 min-w-0 text-left"
                 >
                     <FolderIcon className="w-4 h-4 text-primary-400 shrink-0" />

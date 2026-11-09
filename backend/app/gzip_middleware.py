@@ -1,16 +1,7 @@
-"""Content-type-filtered gzip compression for single-shot text responses.
-
-Starlette's GZipMiddleware compresses ANY response when the client sends
-Accept-Encoding: gzip — including streamed video/audio (massive wasted CPU
-per chunk, and range/206 semantics break). This middleware only compresses
-complete JSON/HTML/text bodies (API payloads), passes streamed bodies and
-non-200/206 responses through untouched. Large static assets (SPA bundle,
-vendored player) are served PRECOMPRESSED by main.serve_spa instead.
-"""
+"""Content-type-filtered gzip compression for single-shot text responses."""
 
 import gzip
 
-# Only these get compressed — never media, never octet-stream.
 COMPRESSIBLE_TYPES = frozenset(
     {
         "application/json",
@@ -31,8 +22,7 @@ def _content_type(start_message) -> str:
 
 
 class CompressibleGZipMiddleware:
-    """Buffers the response start until the (single-shot) body is known, then
-    emits start+body together — compressed when worthwhile."""
+    """Compress complete text responses, but never streamed responses."""
 
     def __init__(self, app, minimum_size: int = 1024):
         self.app = app
@@ -48,14 +38,17 @@ class CompressibleGZipMiddleware:
             if k.lower() == b"accept-encoding":
                 accept = v
                 break
+
         if b"gzip" not in accept:
             await self.app(scope, receive, send)
             return
 
-        state = {}
+        state = {"streamed": False}
 
         async def send_wrapper(message):
-            if message["type"] == "http.response.start":
+            msg_type = message["type"]
+
+            if msg_type == "http.response.start":
                 state["start"] = message
                 state["compress"] = (
                     message["status"] == 200
@@ -63,24 +56,36 @@ class CompressibleGZipMiddleware:
                 )
                 return
 
-            if message["type"] == "http.response.body":
+            if msg_type == "http.response.body":
+                # Once a response starts streaming, pass every chunk through.
+                # Never try to compress its final chunk separately.
+                if state["streamed"]:
+                    await send(message)
+                    return
+
                 if message.get("more_body"):
-                    # Streamed response — flush the original start message
-                    # unmodified and forward chunks raw.
-                    if "start" in state:
-                        await send(state.pop("start"))
+                    state["streamed"] = True
+                    start = state.pop("start", None)
+                    if start is not None:
+                        await send(start)
                     await send(message)
                     return
 
                 body = message.get("body", b"")
-                if state.get("compress") and len(body) >= self.minimum_size:
+                start = state.get("start")
+
+                if (
+                    start is not None
+                    and state.get("compress")
+                    and len(body) >= self.minimum_size
+                ):
                     compressed = gzip.compress(body, compresslevel=6)
                     if len(compressed) < len(body):
                         start = state.pop("start")
                         headers = [
                             (k, v)
                             for k, v in start.get("headers", [])
-                            if k.lower() != b"content-length"
+                            if k.lower() not in (b"content-length", b"content-encoding")
                         ]
                         headers += [
                             (b"content-length", str(len(compressed)).encode()),
@@ -89,18 +94,24 @@ class CompressibleGZipMiddleware:
                         ]
                         start["headers"] = headers
                         await send(start)
-                        await send({"type": "http.response.body", "body": compressed})
+                        await send({
+                            "type": "http.response.body",
+                            "body": compressed,
+                        })
                         return
-                if "start" in state:
-                    await send(state.pop("start"))
+
+                start = state.pop("start", None)
+                if start is not None:
+                    await send(start)
                 await send(message)
                 return
 
             await send(message)
 
         await self.app(scope, receive, send_wrapper)
-        # App finished without a terminal body message (defensive) — the ASGI
-        # spec requires one, but never leave a start message unsent.
-        if "start" in state:
-            await send(state.pop("start"))
+
+        # Defensive handling if the app exits without a body message.
+        start = state.pop("start", None)
+        if start is not None:
+            await send(start)
             await send({"type": "http.response.body", "body": b""})

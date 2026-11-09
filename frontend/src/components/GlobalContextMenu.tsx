@@ -27,7 +27,7 @@ export default function GlobalContextMenu() {
     const selectedFolders = folders?.filter(f => selectedFolderIds.has(f.id)) || [];
     const menuRef = useRef<HTMLDivElement>(null);
     const [copiedId, setCopiedId] = useState<string | null>(null);
-    // One timer drives the "✓ Copied!" reset: without the ref, rapid copies
+    // One timer drives the "✓ 已复制！" reset: without the ref, rapid copies
     // stacked timers and an early one cleared a newer confirmation; without
     // the unmount cleanup the timer could setState on an unmounted menu.
     const copyTimerRef = useRef<number | null>(null);
@@ -36,7 +36,7 @@ export default function GlobalContextMenu() {
             if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
         };
     }, []);
-    // Reset the "✓ Copied!" confirmation when the menu (re)opens: without
+    // Reset the "✓ 已复制！" confirmation when the menu (re)opens: without
     // this a reopen within the 2s timer window shows a stale confirmation
     // for an action the user hasn't taken in this menu.
     useEffect(() => {
@@ -45,7 +45,7 @@ export default function GlobalContextMenu() {
     // In-flight guard for the async share/link actions. Without it the menu
     // stays open during the POST and rapid clicks mint duplicate share links
     // (or duplicate revokes). The menu intentionally stays open for the
-    // "✓ Copied!" feedback — so the buttons disable instead of closing.
+    // "✓ 已复制！" feedback — so the buttons disable instead of closing.
     const [busyId, setBusyId] = useState<string | null>(null);
     // Sync guard alongside the state above: state updates lag a render, so a
     // fast double-click could pass the `busyId` check twice and mint
@@ -107,6 +107,7 @@ export default function GlobalContextMenu() {
     };
 
     const position = getMenuPosition();
+    const isTouchDevice = window.matchMedia('(hover: none)').matches;
 
     const handleAction = (action: () => void) => {
         action();
@@ -124,7 +125,7 @@ export default function GlobalContextMenu() {
             }, 2000);
         } catch (err) {
             console.error('Failed to copy:', err);
-            addToast('Copy failed (browser blocked clipboard)', 'error');
+            addToast('复制失败，请检查浏览器剪贴板权限', 'error');
         }
     };
 
@@ -161,7 +162,7 @@ export default function GlobalContextMenu() {
             }
         } catch (err) {
             console.error('Failed to create public link:', err);
-            addToast('Could not create share link', 'error');
+            addToast('无法创建分享链接', 'error');
         }
         return null;
     };
@@ -201,8 +202,23 @@ export default function GlobalContextMenu() {
             {/* Context Menu */}
             <div
                 ref={menuRef}
-                className="fixed bg-dark-800/95 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl py-1.5 min-w-[220px] z-[99999] animate-scale-in"
-                style={{
+                className={`fixed bg-dark-800/95 backdrop-blur-xl border border-white/[0.08] shadow-2xl py-1.5 min-w-[220px] z-[99999] animate-scale-in ${
+                    isTouchDevice
+                        ? 'left-0 right-0 bottom-0 w-full rounded-t-2xl rounded-b-none px-2'
+                        : 'rounded-xl'
+                }`}
+                style={isTouchDevice ? {
+                    left: 0,
+                    right: 0,
+                    top: 'auto',
+                    bottom: 0,
+                    width: '100%',
+                    maxHeight: '75dvh',
+                    overflowY: 'auto',
+                    overscrollBehavior: 'contain',
+                    paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)',
+                    transformOrigin: 'bottom center'
+                } : {
                     left: position.left,
                     top: position.top,
                     transformOrigin: 'top left'
@@ -216,15 +232,15 @@ export default function GlobalContextMenu() {
                         {isMultiSelect ? (
                             <>
                                 <div className="px-3 py-2 text-xs font-medium text-dark-400 uppercase tracking-wider">
-                                    {selectedFileIds.size + selectedFolderIds.size} Selected
+                                    {selectedFileIds.size + selectedFolderIds.size} 项已选中
                                 </div>
                                 <button className="context-menu-item w-full text-left" onClick={() => handleAction(() => setMoveItems({ files: selectedFiles, folders: selectedFolders }))}>
                                     <FolderInput className="w-4 h-4" />
-                                    Move ({selectedFileIds.size + selectedFolderIds.size}) Items
+                                    移动（{selectedFileIds.size + selectedFolderIds.size}）个项目
                                 </button>
                                 <button className="context-menu-item w-full text-left text-red-400 hover:bg-red-500/10" onClick={() => handleAction(() => setDeleteConfirm({ type: 'multiple', items: [...selectedFiles, ...selectedFolders] }))}>
                                     <Trash2 className="w-4 h-4" />
-                                    Delete ({selectedFileIds.size + selectedFolderIds.size}) Items
+                                    删除（{selectedFileIds.size + selectedFolderIds.size}）个项目
                                 </button>
                             </>
                         ) : (
@@ -236,7 +252,7 @@ export default function GlobalContextMenu() {
                                     return isPlayable && (<>
                                         <button className="context-menu-item w-full text-left" onClick={() => handleAction(() => handlePlay(f))}>
                                             <Play className="w-4 h-4" />
-                                            Play
+                                            播放
                                         </button>
                                         <button className="context-menu-item w-full text-left" onClick={() => {
                                             handleAction(() => {});
@@ -262,12 +278,12 @@ export default function GlobalContextMenu() {
                                                     window.open(`vlc://${url}`, '_blank', 'noopener,noreferrer');
                                                 } catch (err) {
                                                     console.error('Failed to mint stream token:', err);
-                                                    addToast('Could not open in VLC', 'error');
+                                                    addToast('无法使用 VLC 打开', 'error');
                                                 }
                                             })();
                                         }}>
                                             <ExternalLink className="w-4 h-4" />
-                                            Play in VLC
+                                            使用 VLC 播放
                                         </button>
                                         <button className="context-menu-item w-full text-left" onClick={() => {
                                             handleAction(() => {});
@@ -275,7 +291,7 @@ export default function GlobalContextMenu() {
                                             // short-lived file-bound token, not the account JWT.
                                             void (async () => {
                                                 try {
-                                                    // backendUrl (API_BASE-aware) — see Play in VLC above.
+                                                    // backendUrl (API_BASE-aware) — see 使用 VLC 播放 above.
                                                     // Same encoding + origin gate: clipboard URLs end up
                                                     // in logs/chat history, never leak a token outward.
                                                     const mintedCopy = await getFileDownloadToken(f.id);
@@ -287,15 +303,15 @@ export default function GlobalContextMenu() {
                                                         : `${baseCopy}${sepCopy}token=${encodeURIComponent(mintedCopy)}`;
                                                     if (!isTrustedBackendUrl(url)) throw new Error('Untrusted stream origin');
                                                     await navigator.clipboard.writeText(url);
-                                                    addToast('Stream URL copied', 'success');
+                                                    addToast('播放链接已复制', 'success');
                                                 } catch (err) {
                                                     console.error('Failed to mint stream token:', err);
-                                                    addToast('Could not copy stream URL', 'error');
+                                                    addToast('无法复制播放链接', 'error');
                                                 }
                                             })();
                                         }}>
                                             <Link className="w-4 h-4" />
-                                            Copy Stream URL
+                                            复制播放链接
                                         </button>
                                     </>);
                                 })()}
@@ -304,7 +320,7 @@ export default function GlobalContextMenu() {
                                     onClick={() => handleAction(() => handleDownload(activeContextMenu.item as TelegramFile))}
                                 >
                                     <Download className="w-4 h-4" />
-                                    Download
+                                    下载
                                 </button>
                                 
                                 <hr className="border-white/[0.08] my-1" />
@@ -314,7 +330,7 @@ export default function GlobalContextMenu() {
                                     if (url) handleCopy(url + (url.includes('?') ? '&' : '?') + 'download=1', 'download');
                                 });}}>
                                     <HardDriveDownload className="w-4 h-4" />
-                                    {copiedId === 'download' ? '✓ Copied!' : 'Copy Download URL'}
+                                    {copiedId === 'download' ? '✓ 已复制！' : '复制下载链接'}
                                 </button>
 
                                 <hr className="border-white/[0.08] my-1" />
@@ -329,11 +345,11 @@ export default function GlobalContextMenu() {
                                                     if (url) handleCopy(url, 'public');
                                                 });}}>
                                                     <Globe className="w-4 h-4 text-emerald-400" />
-                                                    {copiedId === 'public' ? '✓ Copied!' : 'Copy Public Link'}
+                                                    {copiedId === 'public' ? '✓ 已复制！' : '复制公开分享链接'}
                                                 </button>
                                                 <button className="context-menu-item w-full text-left text-orange-400 hover:bg-orange-500/10 disabled:opacity-50" disabled={busyId !== null} onClick={() => { void runBusy('revoke', async () => handleRevokeShare(f));}}>
                                                     <ShieldOff className="w-4 h-4" />
-                                                    Revoke Public Link
+                                                    撤销公开分享
                                                 </button>
                                             </>
                                         );
@@ -344,7 +360,7 @@ export default function GlobalContextMenu() {
                                             if (url) handleCopy(url, 'public');
                                         });}}>
                                             <Globe className="w-4 h-4" />
-                                            {copiedId === 'public' ? '✓ Copied!' : 'Copy Public Link'}
+                                            {copiedId === 'public' ? '✓ 已复制！' : '复制公开分享链接'}
                                         </button>
                                     );
                                 })()}
@@ -353,18 +369,18 @@ export default function GlobalContextMenu() {
                                 
                                 <button className="context-menu-item w-full text-left" onClick={() => handleAction(() => setRenameFile(activeContextMenu.item as TelegramFile))}>
                                     <Edit className="w-4 h-4" />
-                                    Rename
+                                    重命名
                                 </button>
                                 <button className="context-menu-item w-full text-left" onClick={() => handleAction(() => setMoveItems({ files: [activeContextMenu.item as TelegramFile], folders: [] }))}>
                                     <FolderInput className="w-4 h-4" />
-                                    Move to...
+                                    移动到…
                                 </button>
                                 
                                 <hr className="border-white/[0.08] my-1" />
                                 
                                 <button className="context-menu-item w-full text-left text-red-400 hover:bg-red-500/10" onClick={() => handleAction(() => setDeleteConfirm({ type: 'file', items: [activeContextMenu.item] }))}>
                                     <Trash2 className="w-4 h-4" />
-                                    Delete
+                                    删除
                                 </button>
                             </>
                         )}
@@ -377,7 +393,7 @@ export default function GlobalContextMenu() {
                             onClick={() => handleAction(() => setRenameFolder(activeContextMenu.item as Folder))}
                         >
                             <Edit className="w-4 h-4" />
-                            Rename
+                            重命名
                         </button>
                         <hr className="border-white/[0.08] my-1" />
                         <button
@@ -385,7 +401,7 @@ export default function GlobalContextMenu() {
                             onClick={() => handleAction(() => setDeleteConfirm({ type: 'folder', items: [activeContextMenu.item] }))}
                         >
                             <Trash2 className="w-4 h-4" />
-                            Delete
+                            删除
                         </button>
                     </>
                 )}

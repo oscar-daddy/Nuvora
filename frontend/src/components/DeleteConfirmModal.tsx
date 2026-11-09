@@ -1,5 +1,5 @@
 /**
- * DeleteConfirmModal - confirmation dialog for deleting files/folders
+ * 删除ConfirmModal - confirmation dialog for deleting files/folders
  */
 import { useState, useRef, useEffect } from 'react';
 import { X, Trash2 } from 'lucide-react';
@@ -16,7 +16,7 @@ interface DeleteConfirmModalProps {
 export default function DeleteConfirmModal({ type, name, count = 1, onConfirm, onClose }: DeleteConfirmModalProps) {
     const [isPending, setIsPending] = useState(false);
     const inFlightRef = useRef(false);
-    // Return focus to the opener (Delete menu item) on close. Safe when the
+    // Return focus to the opener (删除 menu item) on close. Safe when the
     // deleted item's card is already gone — focus() on it just no-ops.
     useFocusReturn();
 
@@ -50,10 +50,10 @@ export default function DeleteConfirmModal({ type, name, count = 1, onConfirm, o
             setIsPending(false);
         }
     };
-    const title = count > 1 ? `Delete ${count} items` : `Delete ${type}`;
+    const title = count > 1 ? `删除 ${count} 个项目` : `删除${type === 'file' ? '文件' : type === 'folder' ? '文件夹' : '项目'}`;
     const message = count > 1 
-        ? `Are you sure you want to delete these ${count} items?`
-        : <>Are you sure you want to delete <span className="text-white font-medium">"{name}"</span>?</>;
+        ? `确定要删除这 ${count} 个项目吗？`
+        : <>确定要删除 <span className="text-white font-medium">"{name}"</span>吗？</>;
 
     return (
         <div
@@ -75,7 +75,7 @@ export default function DeleteConfirmModal({ type, name, count = 1, onConfirm, o
                 <div className="text-dark-300 mb-6">
                     <p>{message}</p>
                     <p className="mt-2 text-sm text-red-400">
-                        This action cannot be undone.
+                        此操作无法撤销。
                     </p>
                 </div>
 
@@ -84,14 +84,14 @@ export default function DeleteConfirmModal({ type, name, count = 1, onConfirm, o
                         onClick={safeClose}
                         className="px-4 py-2 text-dark-400 hover:text-white transition-colors"
                     >
-                        Cancel
+                        取消
                     </button>
                     <button
                         onClick={handleConfirm}
                         disabled={isPending}
                         className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isPending ? 'Deleting...' : 'Delete'}
+                        {isPending ? '正在删除...' : '删除'}
                     </button>
                 </div>
             </div>

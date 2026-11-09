@@ -26,6 +26,7 @@ class UserResponse(UserBase):
     id: int
     created_at: datetime
     last_active: datetime
+    is_admin: bool
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -83,7 +84,7 @@ class FileBase(BaseModel):
     file_size: int = Field(ge=0)
     mime_type: Optional[str] = Field(default=None, max_length=100)
     file_type: str = Field(max_length=50)  # video, audio, document, image
-    duration: Optional[int] = Field(default=None, ge=0)
+    duration: Optional[float] = Field(default=None, ge=0)
     width: Optional[int] = Field(default=None, ge=0)
     height: Optional[int] = Field(default=None, ge=0)
 

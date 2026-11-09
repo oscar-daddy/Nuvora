@@ -22,10 +22,10 @@ export default function NewFolderModal({ parentId, onClose }: NewFolderModalProp
     const [name, setName] = useState('');
     const createFolder = useCreateFolder();
     const addToast = useAppStore((s) => s.addToast);
-    // Return focus to the opener (New Folder button) on close.
+    // Return focus to the opener (新建文件夹 button) on close.
     useFocusReturn();
 
-    // Guarded close: creating is fast, but backdrop/Escape/X/Cancel during
+    // Guarded close: creating is fast, but backdrop/Escape/X/取消 during
     // the POST must not fake a cancel (the create still completes + toasts).
     // Own Escape listener (not FileBrowser's) so the guard can't be bypassed.
     const pendingRef = useRef(createFolder.isPending);
@@ -55,7 +55,7 @@ export default function NewFolderModal({ parentId, onClose }: NewFolderModalProp
             });
             onClose();
         } catch (error) {
-            addToast(errorMessage(error, 'Failed to create folder'), 'error');
+            addToast(errorMessage(error, '创建文件夹失败'), 'error');
         }
     };
 
@@ -69,7 +69,7 @@ export default function NewFolderModal({ parentId, onClose }: NewFolderModalProp
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold flex items-center gap-2">
                         <FolderPlus className="w-5 h-5 text-primary-400" />
-                        New Folder
+                        新建文件夹
                     </h2>
                     <button onClick={safeClose} className="p-1 hover:bg-dark-700 rounded">
                         <X className="w-5 h-5" />
@@ -81,7 +81,7 @@ export default function NewFolderModal({ parentId, onClose }: NewFolderModalProp
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="Folder name"
+                        placeholder="请输入文件夹名称"
                         autoFocus
                         className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/50 mb-4"
                     />
@@ -92,14 +92,14 @@ export default function NewFolderModal({ parentId, onClose }: NewFolderModalProp
                             onClick={safeClose}
                             className="px-4 py-2 text-dark-400 hover:text-white transition-colors"
                         >
-                            Cancel
+                            取消
                         </button>
                         <button
                             type="submit"
                             disabled={!name.trim() || createFolder.isPending}
                             className="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            {createFolder.isPending ? 'Creating...' : 'Create'}
+                            {createFolder.isPending ? '正在创建...' : '创建'}
                         </button>
                     </div>
                 </form>

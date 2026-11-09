@@ -69,7 +69,7 @@ const setPreviewFile = useAppStore((s) => s.setPreviewFile);
     const q = query.trim();
     if (!q) return;
     if (q.length < 2) {
-      addToast('Type at least 2 characters', 'info');
+      addToast('请至少输入 2 个字符', 'info');
       return;
     }
     const seq = ++searchSeqRef.current;
@@ -82,12 +82,12 @@ const setPreviewFile = useAppStore((s) => s.setPreviewFile);
       setResults(data.results);
       lastSearchRef.current = { query: q, chatId: data.group_chat_id };
       if (data.results.length === 0) {
-        addToast('No results found', 'info');
+        addToast('没有找到相关结果', 'info');
       }
     } catch (err: any) {
       if (seq !== searchSeqRef.current) return;
       setSearched(false);
-      addToast(errorMessage(err, 'Search failed'), 'error');
+      addToast(errorMessage(err, '搜索失败'), 'error');
     }
   }, [query, searchMutation, addToast]);
 
@@ -112,9 +112,9 @@ const setPreviewFile = useAppStore((s) => s.setPreviewFile);
       // Refresh file list so the new file shows up
       queryClient.invalidateQueries({ queryKey: ['files'] });
             queryClient.invalidateQueries({ queryKey: ['storage'] });
-      addToast('Movie grabbed!', 'success');
+      addToast('已成功添加到媒体库！', 'success');
     } catch (err: any) {
-      addToast(errorMessage(err, 'Failed to grab'), 'error');
+      addToast(errorMessage(err, '添加失败'), 'error');
     } finally {
       grabbingRef.current.delete(itemId);
       setGrabbingIds((prev) => {
@@ -132,9 +132,9 @@ const setPreviewFile = useAppStore((s) => s.setPreviewFile);
       setCopied(true);
       if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
       copyTimerRef.current = window.setTimeout(() => setCopied(false), 2000);
-      addToast('URL copied!', 'success');
+      addToast('链接已复制！', 'success');
     } catch {
-      addToast('Failed to copy', 'error');
+      addToast('复制失败', 'error');
     }
   }, [grabbed, addToast]);
 
@@ -201,9 +201,9 @@ const setPreviewFile = useAppStore((s) => s.setPreviewFile);
     <div className="p-6 animate-fade-in">
       {/* Search Header */}
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-white mb-2">Search Movies</h2>
+        <h2 className="text-3xl font-bold text-white mb-2">搜索影视</h2>
         <p className="text-dark-400">
-          Find movies from Telegram groups and add them to your library
+          从 Telegram 群组中搜索影视资源，并添加到你的媒体库
         </p>
       </div>
 
@@ -212,7 +212,7 @@ const setPreviewFile = useAppStore((s) => s.setPreviewFile);
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-500 pointer-events-none" />
         <input
           type="text"
-          placeholder="Search movies, shows, anything..."
+          placeholder="搜索电影、电视剧或其他影视资源..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -223,7 +223,7 @@ const setPreviewFile = useAppStore((s) => s.setPreviewFile);
           <button
             onClick={handleClear}
             className="absolute right-24 top-1/2 -translate-y-1/2 p-1 text-dark-500 hover:text-white transition-colors"
-            title="Clear search"
+            title="清空搜索"
           >
             <X className="w-4 h-4" />
           </button>
@@ -236,7 +236,7 @@ const setPreviewFile = useAppStore((s) => s.setPreviewFile);
           {searchMutation.isPending ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
-            'Search'
+            '搜索'
           )}
         </button>
       </div>
@@ -264,10 +264,10 @@ const setPreviewFile = useAppStore((s) => s.setPreviewFile);
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500/25 to-primary-500/5 border border-primary-500/20 ring-1 ring-primary-500/25 shadow-glow flex items-center justify-center mx-auto mb-4">
               <Film className="w-7 h-7 text-primary-400" />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-1">Find something to watch</h3>
+            <h3 className="text-lg font-semibold text-white mb-1">寻找想看的影视</h3>
             <p className="text-dark-400 text-sm max-w-sm mx-auto">
-              Search a movie or show name — results come from connected Telegram groups.
-              Grab a match to add it to your library.
+              输入电影或电视剧名称进行搜索，结果来自已连接的 Telegram 群组。
+              点击匹配的资源即可添加到媒体库。
             </p>
           </div>
         </div>
@@ -280,7 +280,7 @@ const setPreviewFile = useAppStore((s) => s.setPreviewFile);
             <Search className="w-8 h-8 text-dark-500" />
           </div>
           <h3 className="text-lg font-semibold text-white mb-1">No results for “{query.trim()}”</h3>
-          <p className="text-dark-400 text-sm">Try a different search term or check the spelling</p>
+          <p className="text-dark-400 text-sm">试试其他关键词，或检查一下输入是否有误</p>
         </div>
       )}
 
@@ -289,9 +289,9 @@ const setPreviewFile = useAppStore((s) => s.setPreviewFile);
         <div className="space-y-2 max-w-2xl">
           <div className="flex items-center gap-2 mb-4">
             <span className="badge badge-primary">
-              {results.length} result{results.length > 1 ? 's' : ''}
+              {results.length} 条结果
             </span>
-            <span className="text-xs text-dark-500">Click any result to grab it</span>
+            <span className="text-xs text-dark-500">点击任意结果即可添加到媒体库</span>
           </div>
           {results.map((item) => {
             const grabbing = isGrabbing(item);
@@ -317,7 +317,7 @@ const setPreviewFile = useAppStore((s) => s.setPreviewFile);
                   <p className="text-dark-500 text-sm mt-0.5 flex items-center gap-2">
                     {item.label && <span className="truncate">{item.label}</span>}
                     {item.label && <span className="shrink-0 text-dark-700">·</span>}
-                    <span className="shrink-0">{item.file_size > 0 ? formatFileSize(item.file_size) : 'Unknown size'}</span>
+                    <span className="shrink-0">{item.file_size > 0 ? formatFileSize(item.file_size) : '未知大小'}</span>
                   </p>
                 </div>
                 <button
@@ -330,7 +330,7 @@ const setPreviewFile = useAppStore((s) => s.setPreviewFile);
                   ) : (
                     <Download className="w-4 h-4" />
                   )}
-                  Grab
+                  添加到媒体库
                 </button>
               </div>
             );
@@ -393,7 +393,7 @@ function GrabbedModal({ result: grabbed, copied, onClose, onCopyUrl, onWatchNow 
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
                   <Zap className="w-5 h-5 text-green-400" />
-                  Ready to Watch
+                  已添加成功
                 </h3>
                 <button
                   onClick={onClose}
@@ -403,12 +403,12 @@ function GrabbedModal({ result: grabbed, copied, onClose, onCopyUrl, onWatchNow 
                 </button>
               </div>
 
-              <p className="text-dark-300 text-sm mb-1">Grabbed:</p>
+              <p className="text-dark-300 text-sm mb-1">已添加：</p>
               <p className="text-white font-medium text-lg mb-2 truncate">{grabbed.name}</p>
-              <p className="text-dark-500 text-sm mb-6">{grabbed.size > 0 ? formatFileSize(grabbed.size) : 'Unknown size'}</p>
+              <p className="text-dark-500 text-sm mb-6">{grabbed.size > 0 ? formatFileSize(grabbed.size) : '未知大小'}</p>
 
               <div className="glass-card p-4 mb-6">
-                <p className="text-dark-400 text-xs mb-2 uppercase tracking-wider font-medium">Stream URL</p>
+                <p className="text-dark-400 text-xs mb-2 uppercase tracking-wider font-medium">播放链接</p>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 text-xs text-primary-300 truncate bg-dark-900/50 rounded-lg px-3 py-2 border border-white/[0.04] font-mono">
                     {grabbed.stream_url}
@@ -416,7 +416,7 @@ function GrabbedModal({ result: grabbed, copied, onClose, onCopyUrl, onWatchNow 
                   <button
                     onClick={onCopyUrl}
                     className="btn-icon"
-                    title="Copy URL"
+                    title="复制链接"
                   >
                     {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
                   </button>
@@ -429,7 +429,7 @@ function GrabbedModal({ result: grabbed, copied, onClose, onCopyUrl, onWatchNow 
                   className="btn-primary flex-1 flex items-center justify-center gap-2 py-3"
                 >
                   <Play className="w-4 h-4" />
-                  Watch Now
+                  立即播放
                 </button>
                 <a
                   href={getVlcUrl(grabbed.stream_url)}
@@ -438,7 +438,7 @@ function GrabbedModal({ result: grabbed, copied, onClose, onCopyUrl, onWatchNow 
                   className="btn-secondary flex-1 flex items-center justify-center gap-2 py-3"
                 >
                   <ExternalLink className="w-4 h-4" />
-                  Watch in VLC
+                  使用 VLC 播放
                 </a>
               </div>
             </div>

@@ -2,7 +2,7 @@
  * FileCard component - displays a single file in grid or list view
  */
 import React from 'react';
-import { Play, MoreVertical, Film, Music, FileText, Image } from 'lucide-react';
+import { Play, MoreVertical, Film, Music, FileText, Image, Check } from 'lucide-react';
 import { TelegramFile, formatFileSize, formatDuration } from '../lib/api';
 import { useAppStore } from '../lib/store';
 import AuthImage from './AuthImage';
@@ -11,6 +11,7 @@ interface FileCardProps {
     file: TelegramFile;
     viewMode: 'grid' | 'list';
     selected: boolean;
+    selectionMode: boolean;
     onSelect: (multi: boolean) => void;
     onPlay: () => void;
 }
@@ -19,6 +20,7 @@ function FileCardImpl({
     file,
     viewMode,
     selected,
+    selectionMode,
     onSelect,
     onPlay
 }: FileCardProps) {
@@ -33,6 +35,11 @@ function FileCardImpl({
     const handleContextMenu = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
+
+        // Touch devices use the card's explicit More button instead.
+        // Keep the native right-click menu on desktop.
+        if (window.matchMedia('(hover: none)').matches) return;
+
         if (!selected) {
             onSelect(false);
         }
@@ -41,6 +48,22 @@ function FileCardImpl({
 
     const handleClick = (e: React.MouseEvent) => {
         e.stopPropagation();
+
+        // A long-press selection must not trigger a click when the finger lifts.
+        const card = e.currentTarget as HTMLElement;
+        if (card.dataset.longPressConsumed === 'true') {
+            delete card.dataset.longPressConsumed;
+            return;
+        }
+
+        // On touch devices, a normal tap opens the media.
+        // Once selection mode is active, tapping toggles the item.
+        if (window.matchMedia('(hover: none)').matches) {
+            if (selectionMode) onSelect(true);
+            else onPlay();
+            return;
+        }
+
         onSelect(e.ctrlKey || e.metaKey || e.shiftKey);
     };
 
@@ -75,8 +98,12 @@ function FileCardImpl({
                         ? 'bg-primary-500/10 border border-primary-500/30'
                         : 'glass-card hover:bg-white/[0.03] border-white/[0.05]'
                     }`}
-                draggable
+                draggable={!window.matchMedia('(hover: none)').matches}
                 onDragStart={(e) => {
+                    if (window.matchMedia('(hover: none)').matches) {
+                        e.preventDefault();
+                        return;
+                    }
                     e.dataTransfer.setData('text/plain', String(file.id));
                     e.dataTransfer.setData('application/json', JSON.stringify({ type: 'file', id: file.id }));
                 }}
@@ -85,6 +112,26 @@ function FileCardImpl({
                 onDoubleClick={handleDoubleClick}
                 data-file-id={file.id}
             >
+                {selectionMode && <button
+                    type="button"
+                    aria-label={selected ? "取消选择" : "选择文件"}
+                    aria-pressed={selected}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onSelect(true);
+                    }}
+                    onDoubleClick={(e) => e.stopPropagation()}
+                    className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg touch-manipulation"
+                >
+                    <span className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${
+                        selected
+                            ? 'bg-primary-500 border-primary-400 text-white'
+                            : 'bg-dark-800 border-white/30 text-transparent'
+                    }`}>
+                        <Check className="w-4 h-4" />
+                    </span>
+                </button>}
                 <div className="w-12 h-12 rounded-lg bg-dark-800/80 flex items-center justify-center overflow-hidden shrink-0 border border-white/[0.05]">
                     {file.file_type === 'image' || file.thumbnail_url ? (
                         // AuthImage sends the token via the Authorization header
@@ -105,7 +152,7 @@ function FileCardImpl({
                     <div className="flex items-center gap-3 text-xs text-dark-400 mt-1">
                         <span className="flex items-center gap-1">
                             {getSmallIcon()}
-                            <span className="capitalize">{file.file_type}</span>
+                            <span>{({ video: '视频', audio: '音频', image: '图片', document: '文档' } as Record<string, string>)[file.file_type] || '文件'}</span>
                         </span>
                         <span className="w-1 h-1 rounded-full bg-dark-600"></span>
                         <span>{formatFileSize(file.file_size)}</span>
@@ -154,8 +201,12 @@ function FileCardImpl({
                     ? 'bg-primary-500/10 border border-primary-500/30 shadow-lg shadow-primary-500/5'
                     : 'glass-card hover:bg-dark-800/60 hover:shadow-xl hover:shadow-black/20 hover:-translate-y-1'
                 }`}
-            draggable
+            draggable={!window.matchMedia('(hover: none)').matches}
             onDragStart={(e) => {
+                    if (window.matchMedia('(hover: none)').matches) {
+                        e.preventDefault();
+                        return;
+                    }
                     e.dataTransfer.setData('text/plain', String(file.id));
                     e.dataTransfer.setData('application/json', JSON.stringify({ type: 'file', id: file.id }));
                 }}
@@ -165,6 +216,26 @@ function FileCardImpl({
             data-file-id={file.id}
         >
             <div className={`aspect-video rounded-lg mb-3 overflow-hidden relative border ${selected ? 'border-primary-500/20' : 'border-white/[0.05]'} bg-dark-900/50`}>
+                {selectionMode && <button
+                    type="button"
+                    aria-label={selected ? "取消选择" : "选择文件"}
+                    aria-pressed={selected}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onSelect(true);
+                    }}
+                    onDoubleClick={(e) => e.stopPropagation()}
+                    className="absolute top-1.5 left-1.5 z-20 w-10 h-10 flex items-center justify-center rounded-lg bg-black/30 touch-manipulation"
+                >
+                    <span className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${
+                        selected
+                            ? 'bg-primary-500 border-primary-400 text-white'
+                            : 'bg-dark-900/80 border-white/60 text-transparent'
+                    }`}>
+                        <Check className="w-4 h-4" />
+                    </span>
+                </button>}
                 {file.file_type === 'image' || file.thumbnail_url ? (
                     <>
                         <AuthImage
@@ -221,7 +292,7 @@ function FileCardImpl({
                             : 'bg-dark-800 border-white/[0.05] text-dark-400 group-hover:border-white/[0.1]'
                         }`}>
                             {getSmallIcon()}
-                            <span className="capitalize">{file.file_type}</span>
+                            <span>{({ video: '视频', audio: '音频', image: '图片', document: '文档' } as Record<string, string>)[file.file_type] || '文件'}</span>
                         </span>
                         <p className="text-[10px] text-dark-500">
                             {formatFileSize(file.file_size)}
@@ -256,5 +327,5 @@ function FileCardImpl({
 // capture the same stable store actions each time, so compare by value props.
 export default React.memo(
     FileCardImpl,
-    (prev, next) => prev.file === next.file && prev.viewMode === next.viewMode && prev.selected === next.selected
+    (prev, next) => prev.file === next.file && prev.viewMode === next.viewMode && prev.selected === next.selected && prev.selectionMode === next.selectionMode
 );

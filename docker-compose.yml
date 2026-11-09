@@ -11,7 +11,7 @@ services:
       SERVER_PORT: "${SERVER_PORT:-7680}"
       WEB_BASE_URL: "${WEB_BASE_URL:-http://localhost:7680}"
     ports:
-      - "${SERVER_PORT:-7680}:${SERVER_PORT:-7680}"
+      - "127.0.0.1:${SERVER_PORT:-7680}:${SERVER_PORT:-7680}"
     volumes:
       - ./data:/app/data       # persists data/teleplay.db + data/.jwt_secret + data/vcache
       - ./session:/app/session # persists Telegram .session files (gitignored)

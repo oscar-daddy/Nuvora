@@ -106,6 +106,13 @@ export default function FileBrowser() {
     const { data: folders, isLoading: foldersLoading, refetch: refetchFolders } = useFolders(currentFolderId, filesSectionActive);
     const showFolders = filesSectionActive && !searchQuery && !fileTypeFilter;
 
+    // Batch selection actions use all currently loaded files.
+    const selectedFilesForMove = (displayFiles || []).filter(file => selectedFileIds.has(file.id));
+    const selectedFoldersForMove = (folders || []).filter(folder => selectedFolderIds.has(folder.id));
+    const selectedItemCount = selectedFileIds.size + selectedFolderIds.size;
+    const loadedFileIds = (displayFiles || []).map(file => file.id);
+    const loadedFolderIds = showFolders ? (folders || []).map(folder => folder.id) : [];
+
     // Combined loading state
     isLoading = isLoading || (activeSection === 'files' && foldersLoading);
     
@@ -125,6 +132,132 @@ export default function FileBrowser() {
     const selectionStart = useRef({ x: 0, y: 0 });
     const pendingResetRef = useRef(false);
     const pageLoadingRef = useRef(false);
+
+    // Mobile album-style long-press and drag selection.
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        let gesture: {
+            fileId: number;
+            card: HTMLElement;
+            startX: number;
+            startY: number;
+            timer: number | null;
+            active: boolean;
+            visited: Set<number>;
+        } | null = null;
+
+        const clearGesture = () => {
+            if (gesture?.timer !== null && gesture?.timer !== undefined) {
+                window.clearTimeout(gesture.timer);
+            }
+            gesture = null;
+        };
+
+        const handleTouchStart = (event: TouchEvent) => {
+            if (event.touches.length !== 1 || activeSection !== 'files') return;
+
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+            if (target.closest('button')) return;
+
+            const card = target.closest<HTMLElement>('[data-file-id]');
+            if (!card) return;
+
+            const touch = event.touches[0];
+            const fileId = Number(card.dataset.fileId);
+            if (!Number.isFinite(fileId)) return;
+
+            clearGesture();
+
+            gesture = {
+                fileId,
+                card,
+                startX: touch.clientX,
+                startY: touch.clientY,
+                timer: null,
+                active: false,
+                visited: new Set([fileId]),
+            };
+
+            const current = gesture;
+            current.timer = window.setTimeout(() => {
+                if (gesture !== current) return;
+
+                current.active = true;
+                current.card.dataset.longPressConsumed = 'true';
+
+                const store = useAppStore.getState();
+
+                // Preserve an existing file selection and add this item.
+                if (store.selectedFolderIds.size > 0) {
+                    store.clearSelection();
+                    useAppStore.getState().selectFile(fileId, false);
+                } else if (store.selectedFileIds.size === 0) {
+                    store.selectFile(fileId, false);
+                } else if (!store.selectedFileIds.has(fileId)) {
+                    store.selectFile(fileId, true);
+                }
+            }, 450);
+        };
+
+        const handleTouchMove = (event: TouchEvent) => {
+            if (!gesture || event.touches.length !== 1) return;
+
+            const touch = event.touches[0];
+
+            if (!gesture.active) {
+                const dx = touch.clientX - gesture.startX;
+                const dy = touch.clientY - gesture.startY;
+
+                // Movement before the long-press threshold means scrolling.
+                if (Math.hypot(dx, dy) > 12) {
+                    clearGesture();
+                }
+                return;
+            }
+
+            // Once selection starts, keep the finger gesture for selecting cards.
+            event.preventDefault();
+
+            const target = document.elementFromPoint(touch.clientX, touch.clientY);
+            const card = target instanceof Element
+                ? target.closest<HTMLElement>('[data-file-id]')
+                : null;
+
+            if (!card) return;
+
+            const fileId = Number(card.dataset.fileId);
+            if (!Number.isFinite(fileId) || gesture.visited.has(fileId)) return;
+
+            gesture.visited.add(fileId);
+            card.dataset.longPressConsumed = 'true';
+
+            const store = useAppStore.getState();
+
+            // Never toggle an already-selected item while dragging.
+            if (!store.selectedFileIds.has(fileId)) {
+                store.selectFile(fileId, true);
+            }
+        };
+
+        const handleTouchEnd = () => clearGesture();
+        const handleTouchCancel = () => clearGesture();
+
+        container.addEventListener('touchstart', handleTouchStart, { passive: true });
+        container.addEventListener('touchmove', handleTouchMove, { passive: false });
+        container.addEventListener('touchend', handleTouchEnd);
+        container.addEventListener('touchcancel', handleTouchCancel);
+
+        return () => {
+            clearGesture();
+            container.removeEventListener('touchstart', handleTouchStart);
+            container.removeEventListener('touchmove', handleTouchMove);
+            container.removeEventListener('touchend', handleTouchEnd);
+            container.removeEventListener('touchcancel', handleTouchCancel);
+        };
+    }, [activeSection]);
 
     // handle refresh
     const handleRefresh = useCallback(() => {
@@ -147,7 +280,7 @@ export default function FileBrowser() {
         try {
             await updateFileMutation.mutateAsync({ id: fileId, folder_id: folderId });
         } catch {
-            addToast('Cannot move file there', 'error');
+            addToast('无法将文件移动到此位置', 'error');
         }
     }, [updateFileMutation, addToast]);
 
@@ -158,7 +291,7 @@ export default function FileBrowser() {
         try {
             await moveFoldersMutation.mutateAsync({ ids: [draggedId], folderId: targetId });
         } catch {
-            addToast('Cannot move folder there', 'error');
+            addToast('无法将文件夹移动到此位置', 'error');
         }
     }, [moveFoldersMutation, addToast]);
 
@@ -228,10 +361,10 @@ export default function FileBrowser() {
             // No manual refetch: the delete mutations' onSuccess already
             // invalidate ['files']/['folders'] — refetching here duplicated
             // every round-trip.
-            addToast('Items deleted successfully', 'success');
+            addToast('已成功删除所选项目', 'success');
         } catch (error) {
             console.error('Delete failed:', error);
-            addToast('Failed to delete items', 'error');
+            addToast('删除项目失败', 'error');
         }
     };
 
@@ -259,11 +392,11 @@ export default function FileBrowser() {
             } else if (clipboard.mode === 'copy') {
                 // Blocking alert() freezes the tab and traps focus — the app
                 // surfaces every other notice via toasts, so do that here too.
-                addToast('Copying files is not supported — use Cut to move instead', 'info');
+                addToast('暂不支持直接复制文件，请使用“剪切”功能移动文件', 'info');
             }
         } catch (error) {
             console.error('Paste failed:', error);
-            addToast('Failed to move items', 'error');
+            addToast('移动项目失败', 'error');
         }
     }, [clipboard, currentFolderId, moveFilesMutation, moveFoldersMutation, setClipboard, addToast]);
 
@@ -612,7 +745,7 @@ export default function FileBrowser() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-500" />
 <input
                                     type="text"
-                                    placeholder="Search..."
+                                    placeholder="搜索文件..."
                                     value={searchInput}
                                     onChange={(e) => setSearchInput(e.target.value)}
                                     className="w-full bg-dark-800/50 border border-white/[0.06] rounded-lg pl-9 pr-3 py-1.5 text-sm text-white focus:outline-none focus:border-primary-500/50 focus:bg-dark-800 focus:shadow-[0_0_20px_-4px_rgba(168,85,247,0.5)] transition-all"
@@ -649,7 +782,7 @@ export default function FileBrowser() {
                         <div className="hidden md:flex items-center bg-dark-800/50 rounded-lg p-0.5 border border-white/[0.06] mr-2">
                              <button
                                 onClick={() => setFileTypeFilter(null)}
-                                title="All Files"
+                                title="全部文件"
                                 className={`p-1.5 rounded-md transition-all ${
                                     !fileTypeFilter ? 'bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-md shadow-primary-600/40' : 'text-dark-400 hover:text-white hover:bg-white/[0.05]'
                                 }`}
@@ -658,7 +791,7 @@ export default function FileBrowser() {
                             </button>
                             <button
                                 onClick={() => setFileTypeFilter('video')}
-                                title="Videos"
+                                title="视频"
                                 className={`p-1.5 rounded-md transition-all ${
                                     fileTypeFilter === 'video' ? 'bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-md shadow-primary-600/40' : 'text-dark-400 hover:text-white hover:bg-white/[0.05]'
                                 }`}
@@ -667,7 +800,7 @@ export default function FileBrowser() {
                             </button>
                             <button
                                 onClick={() => setFileTypeFilter('audio')}
-                                title="Audio"
+                                title="音频"
                                 className={`p-1.5 rounded-md transition-all ${
                                     fileTypeFilter === 'audio' ? 'bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-md shadow-primary-600/40' : 'text-dark-400 hover:text-white hover:bg-white/[0.05]'
                                 }`}
@@ -676,7 +809,7 @@ export default function FileBrowser() {
                             </button>
                             <button
                                 onClick={() => setFileTypeFilter('image')}
-                                title="Images"
+                                title="图片"
                                 className={`p-1.5 rounded-md transition-all ${
                                     fileTypeFilter === 'image' ? 'bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-md shadow-primary-600/40' : 'text-dark-400 hover:text-white hover:bg-white/[0.05]'
                                 }`}
@@ -685,7 +818,7 @@ export default function FileBrowser() {
                             </button>
                             <button
                                 onClick={() => setFileTypeFilter('document')}
-                                title="Documents"
+                                title="文档"
                                 className={`p-1.5 rounded-md transition-all ${
                                     fileTypeFilter === 'document' ? 'bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-md shadow-primary-600/40' : 'text-dark-400 hover:text-white hover:bg-white/[0.05]'
                                 }`}
@@ -699,7 +832,7 @@ export default function FileBrowser() {
                                  onClick={handleRefresh}
                                  disabled={isLoading}
                                  className={`p-1.5 rounded-md text-dark-400 hover:text-white hover:bg-white/[0.05] transition-all active:scale-95 ${isLoading ? 'animate-spin' : ''}`}
-                                 title="Refresh"
+                                 title="刷新"
                              >
                                  <RefreshCw className="w-4 h-4" />
                              </button>
@@ -725,7 +858,7 @@ export default function FileBrowser() {
                                 className="ml-2 btn-secondary py-1.5 px-3 text-xs flex items-center gap-2 bg-primary-500/10 text-primary-300 border-primary-500/20 hover:bg-primary-500/20"
                             >
                                 <Clipboard className="w-3.5 h-3.5" />
-                                Paste ({clipboard.files.length + clipboard.folders.length})
+                                粘贴 ({clipboard.files.length + clipboard.folders.length})
                             </button>
                         )}
 
@@ -735,7 +868,7 @@ export default function FileBrowser() {
                                 className="ml-2 btn-primary py-1.5 px-3 text-sm flex items-center gap-2 shadow-lg shadow-primary-500/20"
                             >
                                 <FolderPlus className="w-4 h-4" />
-                                <span className="hidden sm:inline">New Folder</span>
+                                <span className="hidden sm:inline">新建文件夹</span>
                             </button>
                         )}
                     </div>
@@ -763,11 +896,58 @@ export default function FileBrowser() {
                         </div>
                     ) : (
                         <>
+                            {/* Touch-friendly batch selection toolbar */}
+                            {((showFolders && folders?.length) || displayFiles?.length) &&
+                                !window.matchMedia('(hover: none)').matches ? (
+                                <div className="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-xl border border-white/[0.08] bg-dark-900/70">
+                                    {selectedItemCount > 0 ? (
+                                        <>
+                                            <span className="text-sm text-primary-300 font-medium mr-auto">
+                                                {selectedItemCount} selected
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setMoveItems({
+                                                    files: selectedFilesForMove,
+                                                    folders: selectedFoldersForMove
+                                                })}
+                                                disabled={!selectedFilesForMove.length && !selectedFoldersForMove.length}
+                                                className="min-h-10 px-4 rounded-lg bg-primary-600 hover:bg-primary-500 disabled:opacity-40 text-white text-sm font-medium flex items-center gap-2"
+                                            >
+                                                <FolderPlus className="w-4 h-4" />
+                                                Move to folder
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={clearSelection}
+                                                className="min-h-10 px-4 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-dark-200 text-sm"
+                                            >
+                                                Clear
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="text-xs text-dark-400 mr-auto">
+                                                Select multiple files
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => selectAll(loadedFileIds, loadedFolderIds)}
+                                                disabled={!loadedFileIds.length && !loadedFolderIds.length}
+                                                className="min-h-10 px-4 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-white text-sm"
+                                            >
+                                                Select all loaded
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            ) : null}
+
                              {/* Unified View */}
                              {(showFolders && folders?.length ? folders.length : 0) + (displayFiles?.length || 0) > 0 ? (
                                 <div className={viewMode === 'grid'
-                                    ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 pb-20'
-                                    : 'flex flex-col gap-2 pb-20'
+                                    ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 pb-32 md:pb-20'
+                                    : 'flex flex-col gap-2 pb-32 md:pb-20'
                                 }>
                                     {/* Folders */}
                                     {showFolders && folders?.map((folder) => (
@@ -790,6 +970,7 @@ export default function FileBrowser() {
                                             file={file}
                                             viewMode={viewMode}
                                             selected={selectedFileIds.has(file.id)}
+                                            selectionMode={selectedItemCount > 0}
                                             onSelect={(multi) => selectFile(file.id, multi)}
                                             onPlay={() => handleFileOpen(file)}
                                         />
@@ -800,9 +981,9 @@ export default function FileBrowser() {
                                     <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary-600/15 via-dark-800/60 to-dark-800/40 flex items-center justify-center border border-primary-500/15 shadow-glow mb-6">
                                         <ArrowUp className="w-10 h-10 text-primary-400 animate-bounce" />
                                     </div>
-                                    <h3 className="text-xl font-bold text-white mb-2">No files found</h3>
+                                    <h3 className="text-xl font-bold text-white mb-2">没有找到文件</h3>
                                     <p className="text-dark-400 max-w-xs">
-                                        Upload files by sending them to the Telegram bot
+                                        向 Telegram 机器人发送文件，即可将文件添加到这里
                                     </p>
                                 </div>
                             )}
@@ -838,6 +1019,43 @@ export default function FileBrowser() {
                 </div>
             </main>
             
+            {/* Mobile floating batch toolbar */}
+            {selectedItemCount > 0 &&
+                activeSection === 'files' &&
+                window.matchMedia('(hover: none)').matches && (
+                <div
+                    className="fixed inset-x-0 bottom-0 z-[100] px-3 pt-3 pointer-events-none"
+                    style={{
+                        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)'
+                    }}
+                >
+                    <div className="pointer-events-auto flex items-center gap-2 p-3 rounded-2xl border border-white/10 bg-dark-900/95 backdrop-blur-xl shadow-2xl">
+                        <span className="text-sm text-primary-300 font-medium mr-auto whitespace-nowrap">
+                            {selectedItemCount} selected
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setMoveItems({
+                                files: selectedFilesForMove,
+                                folders: selectedFoldersForMove
+                            })}
+                            disabled={!selectedFilesForMove.length && !selectedFoldersForMove.length}
+                            className="min-h-10 px-4 rounded-lg bg-primary-600 hover:bg-primary-500 disabled:opacity-40 text-white text-sm font-medium flex items-center gap-2"
+                        >
+                            <FolderPlus className="w-4 h-4" />
+                            Move
+                        </button>
+                        <button
+                            type="button"
+                            onClick={clearSelection}
+                            className="min-h-10 px-4 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-dark-200 text-sm"
+                        >
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <Toasts />
 
             {/* Modals */}

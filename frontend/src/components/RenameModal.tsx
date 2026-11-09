@@ -1,5 +1,5 @@
 /**
- * RenameModal - Modal for renaming files and folders
+ * 重命名Modal - Modal for renaming files and folders
  */
 import { useState, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
@@ -63,7 +63,7 @@ export default function RenameModal({ isOpen, onClose, onRename, currentName, it
             }, 50);
         }
         if (!isOpen && wasOpenRef.current) {
-            // Closed: hand focus back to the invoking Rename button so
+            // Closed: hand focus back to the invoking 重命名 button so
             // keyboard users don't drop to <body>.
             wasOpenRef.current = false;
             try { openerRef.current?.focus?.({ preventScroll: true }); } catch { /* noop */ }
@@ -113,7 +113,7 @@ export default function RenameModal({ isOpen, onClose, onRename, currentName, it
             await onRename(trimmed);
             onClose();
         } catch (error) {
-            addToast(errorMessage(error, 'Failed to rename'), 'error');
+            addToast(errorMessage(error, '重命名失败'), 'error');
         } finally {
             setIsPending(false);
         }
@@ -130,7 +130,7 @@ export default function RenameModal({ isOpen, onClose, onRename, currentName, it
             <div className="bg-dark-800 rounded-xl border border-dark-600 p-6 w-full max-w-md shadow-2xl">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-white">
-                        Rename {itemType === 'file' ? 'File' : 'Folder'}
+                        重命名{itemType === 'file' ? '文件' : '文件夹'}
                     </h2>
                     <button onClick={safeClose} className="text-dark-400 hover:text-white transition-colors">
                         <X className="w-5 h-5" />
@@ -144,7 +144,7 @@ export default function RenameModal({ isOpen, onClose, onRename, currentName, it
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-white placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        placeholder={`Enter ${itemType} name`}
+                        placeholder={`请输入${itemType === 'file' ? '文件' : '文件夹'}名称`}
                     />
 
                     <div className="flex gap-3 mt-6">
@@ -153,14 +153,14 @@ export default function RenameModal({ isOpen, onClose, onRename, currentName, it
                             onClick={safeClose}
                             className="flex-1 px-4 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition-colors"
                         >
-                            Cancel
+                            取消
                         </button>
                         <button
                             type="submit"
                             disabled={!name.trim() || name.trim() === currentName || isPending}
                             className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-500 disabled:bg-dark-600 disabled:text-dark-400 text-white rounded-lg transition-colors"
                         >
-                            {isPending ? 'Renaming...' : 'Rename'}
+                            {isPending ? '正在重命名...' : '重命名'}
                         </button>
                     </div>
                 </form>

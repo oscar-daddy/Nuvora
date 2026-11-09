@@ -187,19 +187,19 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
         // ignoring the pick (the picker just sat there with no feedback).
         const lowerName = file.name.toLowerCase();
         if (lowerName.endsWith('.sub')) {
-            addToast('MicroDVD (.sub) subtitles are not supported — use .srt or .vtt', 'error');
+            addToast('不支持 MicroDVD（.sub）字幕格式，请使用 .srt 或 .vtt 文件', 'error');
             return;
         }
         if (!lowerName.endsWith('.srt') && !lowerName.endsWith('.vtt')) {
-            addToast('Only .srt or .vtt subtitles are supported', 'error');
+            addToast('仅支持 .srt 或 .vtt 格式的字幕文件', 'error');
             return;
         }
         if (file.size === 0) {
-            addToast('Subtitle file is empty', 'error');
+            addToast('字幕文件为空', 'error');
             return;
         }
         if (file.size > MAX_SUBTITLE_BYTES) {
-            addToast('Subtitle file is too large (max 5 MB)', 'error');
+            addToast('字幕文件过大，最大支持 5 MB', 'error');
             return;
         }
         const reader = new FileReader();
@@ -211,7 +211,7 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
         reader.onerror = () => {
             if (subtitleReaderRef.current !== reader) return;
             subtitleReaderRef.current = null;
-            addToast('Could not read that subtitle file', 'error');
+            addToast('无法读取该字幕文件', 'error');
         };
         reader.onload = () => {
             if (subtitleReaderRef.current !== reader) return;
@@ -243,7 +243,7 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
             const res = await searchInternetSubtitles(file.id);
             setInternetSubs(res.subtitles);
         } catch (err: any) {
-            setInternetError(err?.response?.data?.detail || 'Subtitle search failed');
+            setInternetError(err?.response?.data?.detail || '字幕搜索失败');
         } finally {
             setInternetLoading(false);
         }
@@ -258,7 +258,7 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
         });
     }, []);
 
-    // Download selected internet subtitles and attach them as tracks
+    // 下载选中的在线字幕并将其添加为字幕轨道
     const handleAttachInternet = useCallback(async () => {
         if (!internetSubs || attachingSubs) return;
         const chosen = internetSubs.filter((s) => selectedInternet.has(`${s.provider}:${s.id}`));
@@ -282,7 +282,7 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
             setSelectedInternet(new Set());
             setShowSubPicker(false);
         } catch (err: any) {
-            setInternetError(err?.response?.data?.detail || 'Failed to attach subtitles');
+            setInternetError(err?.response?.data?.detail || '添加字幕失败');
         } finally {
             setAttachingSubs(false);
         }
@@ -302,13 +302,13 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
             if (ok) {
                 setIsLoading(false);
             } else {
-                setError('The playback engine failed to load. Check your connection and try again.');
+                setError('播放器加载失败，请检查网络连接后重试。');
             }
         }).catch((err) => {
             console.error('loadMoviPlayer failed:', err);
             setMoviStatus('error');
             setIsLoading(false);
-            setError('The playback engine failed to load. Check your connection and try again.');
+            setError('播放器加载失败，请检查网络连接后重试。');
         });
     }, [file.id, isImage]);
 
@@ -439,7 +439,7 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
                 else window.location.href = pub;
             } else {
                 if (win) win.close();
-                addToast('Download failed — please try again', 'error');
+                addToast('下载失败，请重试', 'error');
             }
         }
     };
@@ -476,7 +476,7 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
     const handleOpenVlc = () => {
         void (async () => {
             const url = await mintExternalUrl();
-            if (!url) { addToast('Could not open in VLC', 'error'); return; }
+            if (!url) { addToast('无法使用 VLC 打开', 'error'); return; }
             window.open(`vlc://${url}`, '_blank', 'noopener,noreferrer');
         })();
     };
@@ -484,12 +484,12 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
     const handleCopyExternalUrl = () => {
         void (async () => {
             const url = await mintExternalUrl();
-            if (!url) { addToast('Could not copy stream URL', 'error'); return; }
+            if (!url) { addToast('无法复制播放链接', 'error'); return; }
             try {
                 await navigator.clipboard.writeText(url);
-                addToast('URL copied to clipboard', 'success');
+                addToast('播放链接已复制到剪贴板', 'success');
             } catch {
-                addToast('Copy failed (browser blocked clipboard)', 'error');
+                addToast('复制失败，浏览器可能限制了剪贴板访问', 'error');
             }
         })();
     };
@@ -704,12 +704,12 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
             }
             if (s === 'buffering' || s === 'loading' || s === 'seeking') setIsLoading(true);
             else if (s === 'playing' || s === 'ready' || s === 'paused' || s === 'ended') setIsLoading(false);
-            if (s === 'error') setError('Unable to play this media.');
+            if (s === 'error') setError('无法播放此媒体文件。');
             syncDuration();
         };
         const onError = (e?: any) => {
             setIsLoading(false);
-            const msg = (e as any)?.detail?.message || 'Unable to play this media.';
+            const msg = (e as any)?.detail?.message || '无法播放此媒体文件。';
             setError(msg);
         };
 
@@ -811,7 +811,7 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
             subtitles: subtitleTracks.map((t, i) => ({
                 src: t.url,
                 lang: `s${i}`,
-                label: t.label || 'Subtitles',
+                label: t.label || '字幕',
                 format: 'vtt',
             })),
         });
@@ -881,7 +881,7 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
                         alt={file.file_name}
                         className="max-h-full max-w-full object-contain"
                         referrerPolicy="no-referrer"
-                        onError={() => setError('Failed to load this image. The link may have expired — try reopening it.')}
+                        onError={() => setError('图片加载失败，链接可能已过期，请重新打开')}
                     />
                 ) : error ? (
                     // Solid panel (no backdrop-blur, no scale animation): on
@@ -893,7 +893,7 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
                         <div className="w-16 h-16 rounded-2xl bg-yellow-500/20 flex items-center justify-center mx-auto mb-5 border border-yellow-500/30">
                             <AlertTriangle className="w-8 h-8 text-yellow-400" />
                         </div>
-                        <h3 className="text-xl font-bold text-white mb-2">Playback Not Supported</h3>
+                        <h3 className="text-xl font-bold text-white mb-2">暂不支持播放</h3>
                         <p className="text-dark-300 mb-6">{error}</p>
 
                         <div className="flex flex-col gap-3">
@@ -902,7 +902,7 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
                                 className="btn-primary flex items-center justify-center gap-2"
                             >
                                 <ExternalLink className="w-4 h-4" />
-                                Open in VLC
+                                使用 VLC 播放
                             </button>
                             <div className="flex gap-3">
                                 <Button
@@ -910,14 +910,14 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
                                     className="flex-1 btn-secondary flex items-center justify-center gap-2"
                                 >
                                     <Copy className="w-4 h-4" />
-                                    Copy URL
+                                    复制链接
                                 </Button>
                                 <Button
                                     onClick={(e) => { e.stopPropagation(); void handleDownload(); }}
                                     className="flex-1 btn-secondary flex items-center justify-center gap-2"
                                 >
                                     <Download className="w-4 h-4" />
-                                    Download
+                                    下载
                                 </Button>
                             </div>
                         </div>
@@ -925,7 +925,7 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
                             onClick={onClose}
                             className="mt-6 text-dark-400 hover:text-white text-sm transition-colors"
                         >
-                            Close
+                            关闭
                         </button>
                     </div>
                 ) : (
@@ -962,21 +962,21 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
                     <div>
                         <h3 className="text-lg font-medium truncate max-w-lg text-white">{file.file_name}</h3>
                         {((extendedFile?.last_pos || 0) > 0) && currentTime < 5 && (
-                            <p className="text-xs text-primary-400">Resumed from {formatDuration(extendedFile?.last_pos || 0)}</p>
+                            <p className="text-xs text-primary-400">上次播放至 {formatDuration(extendedFile?.last_pos || 0)}</p>
                         )}
                     </div>
                     <div className="flex items-center gap-2 pointer-events-auto">
                         <button
                             onClick={() => setShowSubPicker(true)}
                             className={`p-2 text-white hover:bg-white/20 rounded-full transition-colors ${subtitleTracks.length > 0 ? 'text-primary-400' : ''}`}
-                            title="Load Subtitles"
+                            title="加载字幕"
                         >
                             <Subtitles className="w-6 h-6" />
                         </button>
                         <button
                             onClick={() => setMinimized(true)}
                             className="p-2 text-white hover:bg-white/20 rounded-full transition-colors"
-                            title="Minimize"
+                            title="最小化"
                         >
                             <ChevronDown className="w-6 h-6" />
                         </button>
@@ -1025,10 +1025,10 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
                     </div>
 
                     <div className="flex items-center gap-2 border-l border-white/10 pl-4">
-                        <button onClick={() => { setMinimized(false); focusPlayer(); }} className="p-2 text-dark-400 hover:text-white" title="Maximize">
+                        <button onClick={() => { setMinimized(false); focusPlayer(); }} className="p-2 text-dark-400 hover:text-white" title="最大化">
                             <ChevronUp className="w-5 h-5" />
                         </button>
-                        <button onClick={onClose} className="p-2 text-dark-400 hover:text-red-400" title="Close">
+                        <button onClick={onClose} className="p-2 text-dark-400 hover:text-red-400" title="关闭">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
@@ -1048,13 +1048,13 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
                         className="relative bg-dark-900/95 backdrop-blur-xl rounded-2xl border border-white/10 p-6 animate-scale-in max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <h3 className="text-lg font-bold text-white mb-1">Subtitles</h3>
-                        <p className="text-sm text-dark-300 mb-4">Load from file or search the internet</p>
+                        <h3 className="text-lg font-bold text-white mb-1">字幕</h3>
+                        <p className="text-sm text-dark-300 mb-4">从本地文件加载或在线搜索字幕</p>
 
                         {/* Attached tracks (uploaded + internet downloads) */}
                         {subtitleTracks.length > 0 && (
                             <div className="mb-4">
-                                <p className="text-xs uppercase tracking-wider text-dark-400 font-medium mb-2">Loaded tracks</p>
+                                <p className="text-xs uppercase tracking-wider text-dark-400 font-medium mb-2">已加载的字幕</p>
                                 <div className="space-y-1.5">
                                     {subtitleTracks.map((t) => (
                                         <button
@@ -1065,10 +1065,10 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
                                                     ? 'border-primary-500/60 bg-primary-500/10 text-primary-300'
                                                     : 'border-white/10 bg-white/[0.03] text-dark-200 hover:bg-white/[0.06]'
                                             }`}
-                                            title="Click to enable / disable"
+                                            title="点击开启或关闭字幕"
                                         >
                                             <span className="text-sm truncate">{t.label}</span>
-                                            <span className="text-xs text-primary-400 flex-shrink-0">{activeSubKey === t.key ? 'ON' : 'OFF'}</span>
+                                            <span className="text-xs text-primary-400 flex-shrink-0">{activeSubKey === t.key ? '开启' : '关闭'}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -1081,20 +1081,20 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
                             className="w-full py-3 border-2 border-dashed border-white/20 rounded-xl text-white/60 hover:border-primary-500/50 hover:text-primary-400 transition-colors flex flex-col items-center gap-2 mb-4"
                         >
                             <Subtitles className="w-6 h-6" />
-                            <span className="text-sm font-medium">Choose .srt or .vtt file</span>
+                            <span className="text-sm font-medium">选择 .srt 或 .vtt 字幕文件</span>
                         </button>
 
                         {/* Internet search */}
                         <div className="border-t border-white/10 pt-4">
                             <div className="flex items-center justify-between mb-2">
-                                <p className="text-xs uppercase tracking-wider text-dark-400 font-medium">Search internet</p>
+                                <p className="text-xs uppercase tracking-wider text-dark-400 font-medium">在线搜索字幕</p>
                                 <button
                                     onClick={handleInternetSearch}
                                     disabled={internetLoading}
                                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-500 text-white text-xs font-medium transition-colors disabled:opacity-50"
                                 >
                                     {internetLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-                                    {internetLoading ? 'Searching…' : 'Search'}
+                                    {internetLoading ? '正在搜索…' : '搜索'}
                                 </button>
                             </div>
 
@@ -1103,11 +1103,11 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
                             )}
 
                             {internetSubs === null && !internetLoading && (
-                                <p className="text-xs text-dark-400">Search OpenSubtitles and other providers for this movie / episode.</p>
+                                <p className="text-xs text-dark-400">在 OpenSubtitles 等字幕网站搜索这部电影或当前剧集的字幕。</p>
                             )}
 
                             {internetSubs && internetSubs.length === 0 && (
-                                <p className="text-xs text-dark-400">No internet subtitles found for this title.</p>
+                                <p className="text-xs text-dark-400">没有找到这部影片对应的在线字幕。</p>
                             )}
 
                             {internetSubs && internetSubs.length > 0 && (
@@ -1134,7 +1134,7 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
                                                 <div className="min-w-0 flex-1">
                                                     <p className="text-sm text-white truncate">{s.name}</p>
                                                     <p className="text-[11px] text-dark-400">
-                                                        {s.provider} · {s.language_name || s.language} · {s.score.toLocaleString()} downloads
+                                                        {s.provider} · {s.language_name || s.language} · {s.score.toLocaleString()} 次下载
                                                     </p>
                                                 </div>
                                             </div>
@@ -1150,7 +1150,7 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
                                     className="mt-3 w-full py-2 rounded-lg bg-primary-600 hover:bg-primary-500 text-white text-sm font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
                                     {attachingSubs && <Loader2 className="w-4 h-4 animate-spin" />}
-                                    {attachingSubs ? 'Attaching…' : `Add selected (${selectedInternet.size})`}
+                                    {attachingSubs ? '正在添加…' : `添加所选字幕（${selectedInternet.size}）`}
                                 </button>
                             )}
                         </div>
@@ -1159,7 +1159,7 @@ ${start.replace(',', '.')} --> ${end.replace(',', '.')}`
                             onClick={() => setShowSubPicker(false)}
                             className="mt-4 w-full py-2 text-dark-400 hover:text-white text-sm transition-colors"
                         >
-                            Close
+                            关闭
                         </button>
                     </div>
                 </div>
